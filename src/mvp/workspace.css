@@ -4,3 +4,11 @@ button{display:inline-flex;align-items:center;justify-content:center;gap:7px}but
 .project-item{text-align:right}
 dialog{direction:rtl;font-family:"Estedad",Tahoma,sans-serif}
 .modal-body label,.audit-entry summary,.project-item,.tour{font-size:14px}
+
+/* Appeal & follow-up: status timeline and metadata lines */
+.appeal-timeline{display:flex;align-items:center;gap:8px;margin:10px 0;flex-wrap:wrap}
+.appeal-step{font-size:10px;font-weight:650;padding:5px 10px;border-radius:5px;background:#f0f3ef;color:#7c887f}
+.appeal-step-done{background:#eaf3eb;color:#477553}
+.appeal-step-pending{background:#faf1df;color:#9c7c37}
+.appeal-arrow{color:#b7c0b3;font-size:11px}
+.appeal-meta{font-size:11px;color:#647063;margin:6px 0}

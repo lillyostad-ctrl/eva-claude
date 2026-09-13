@@ -44,3 +44,13 @@ aside nav{direction:rtl;align-items:stretch;flex:none}aside nav button{direction
 .split-bar-legend{display:flex;gap:18px;margin-top:8px;font-size:10px;color:#6d7c6c}
 .split-bar-legend span{display:flex;align-items:center;gap:6px}
 .split-dot{display:inline-block;width:8px;height:8px;border-radius:2px}
+
+/* Team KPI/OKR-to-task breakdown (Expectations) and the inline evidence form on the same page */
+.wbs{padding:6px 23px 20px;display:flex;flex-direction:column;gap:14px}
+.wbs-node{border:1px solid #e2e7de;border-radius:9px;overflow:hidden}
+.wbs-head{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;background:#f6f7f5}
+.wbs-children{display:flex;flex-direction:column}
+.wbs-task{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-top:1px solid #edf0e9;font-size:12px;color:#647063}
+.wbs-task.wbs-mine{background:#f6faf6}
+.form-inline{border-top:1px solid #edf0e9;margin-top:6px;padding-top:20px}
+.trend-line-org{stroke:#c8a55a;stroke-dasharray:5 4}

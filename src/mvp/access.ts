@@ -22,7 +22,7 @@ function managerContexts(db:DB):AppContext[]{
 export function buildContexts(db:DB):AppContext[]{
  const self=db.people.find(p=>p.id===actors.Employee)||db.people[0];
  return [
-  {id:'self',label:'شخصی — اثرگذاری من',roleTitle:'کارمند',scope:`پرونده شخصی ${self.name}`,engineRole:'Employee',personId:self.id,nav:[item('Home','خانه'),item('Expectations','انتظارات و اهداف'),item('Contributions','مشارکت‌ها و پیامدها'),item('Responsibilities','نقش‌ها و سهم مسئولیت'),item('Evidence','شواهد و بازخورد'),item('Evidence package','بسته شواهد محاسبه‌شده'),item('My impact','نمایه و ارزیابی'),item('Appeals','پاسخ‌ها و اعتراض‌های من'),item('Work capture','ثبت رویداد کار')]},
+  {id:'self',label:'شخصی — اثرگذاری من',roleTitle:'کارمند',scope:`پرونده شخصی ${self.name}`,engineRole:'Employee',personId:self.id,nav:[item('Home','خانه'),item('Expectations','انتظارات و اهداف'),item('Contributions','مشارکت‌ها و پیامدها'),item('Evidence','شواهد و بازخورد'),item('Appeals','اعتراض و پیگیری')]},
   ...managerContexts(db),
   {id:'model',label:'مدل عملکرد — سازمان',roleTitle:'مدیر مدل عملکرد',scope:'همه خانواده‌های شغلی',engineRole:'Model admin',nav:[item('Home','خانه مدل'),item('Job families','خانواده‌های شغلی'),item('Performance profiles','پروفایل‌های عملکرد'),item('Model & policy','وزن‌ها و سیاست')]},
   {id:'cycle',label:'دوره — مرداد ۱۴۰۵',roleTitle:'مدیر دوره',scope:'جمعیت واجد شرایط مرداد',engineRole:'Governance',nav:[item('Home','خانه دوره'),item('Data & controls','دوره‌های ارزیابی'),item('Calibration','آمادگی انتشار')]},
