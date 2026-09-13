@@ -22,7 +22,6 @@ export default function App(){
  const pageLabel=context.nav.find(n=>n.id===page)?.label||tr(page);
  const actionCount=db.sampling.filter(s=>s.status==='Queued').length+db.appeals.filter(a=>a.status==='Open').length;
  const dataAsOf=useMemo(()=>new Date().toLocaleString('fa-IR',{dateStyle:'short',timeStyle:'short'}),[]);
- const greeting=useMemo(()=>{const h=new Date().getHours();const part=h>=4&&h<12?'صبح':h>=12&&h<17?'ظهر':h>=17&&h<21?'عصر':'شب';return `${part} بخیر لیلی`},[]);
  const self=db.people.find(p=>p.id===actors.Employee);
  const notify=(text:string)=>{setMessage(text);window.setTimeout(()=>setMessage(''),4500)};
  function save(next:DB,action:string,target:string,detail:string,invalidates=false){if(context.readOnly)return notify('این زمینه فقط خواندنی است.');const actor=context.managerId||context.personId||actors[role];const updated={...next,revision:next.revision+(invalidates?1:0),ledger:[...next.ledger,{id:crypto.randomUUID(),at:new Date().toISOString(),actor,action,target,detail}]};persistDatabase(updated);setDB(updated);notify(action)}
@@ -32,7 +31,6 @@ export default function App(){
  return <div className="shell" dir="rtl">
   <aside className={drawer?'sidebar-open':''}>
    <div className="brand"><span className="brand-icon"><Sparkles size={20}/></span><div>ایوا<small>سامانه شواهد عملکرد</small></div><button className="mobile-close" onClick={()=>setDrawer(false)} aria-label="بستن"><X size={19}/></button></div>
-   <div className="context-summary"><strong>{greeting}</strong></div>
    <div className="nav-label">منوی مجاز این زمینه</div><nav>{context.nav.map(item=>{const Icon=iconFor(item.id);return <button key={item.id} className={page===item.id?'active':''} onClick={()=>navigate(item.id)}><Icon size={18}/><span>{item.label}</span>{item.id==='Appeals'&&<em>{faNum(db.appeals.filter(a=>a.status==='Open').length)}</em>}</button>})}</nav>
    <div className="sidebar-bottom"><LockKeyhole size={14}/> منو از قابلیت‌های مؤثر ساخته شده<small>{context.readOnly?'زمینه فقط خواندنی':'عملیات در دفتر ممیزی ثبت می‌شود'}</small></div>
   </aside>{drawer&&<button className="drawer-scrim" onClick={()=>setDrawer(false)} aria-label="بستن منو"/>}
