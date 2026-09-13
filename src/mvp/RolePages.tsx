@@ -1,8 +1,9 @@
 import {useState,type ReactNode} from 'react';
 import {ArrowUpLeft,CheckCircle2,Clock3,Database,GitBranch,LockKeyhole,ShieldCheck} from 'lucide-react';
 import {scopeFor,type AppContext} from './access';
-import {actors,avg,calculate,dimensions,dimsFromEvidence,weights,type DB,type WorkRole} from './engine';
-import {faDate,faNum,faPeriod,tr} from './fa';
+import {actors,avg,calculate,dimensions,dimsFromEvidence,units,weights,type DB,type Evidence,type WorkItem,type WorkRole} from './engine';
+import {faDate,faNum,faPeriod,faSource,tr} from './fa';
+import {Modal} from './Workspace';
 
 type Props={db:DB;context:AppContext;page:string;period:string;navigate:(page:string)=>void};
 const roles:Record<WorkRole,string>={requester:'درخواست‌دهنده',planner:'برنامه‌ریز',assigner:'واگذارکننده',decision_owner:'مالک تصمیم',executor:'مجری',contributor:'مشارکت‌کننده',reviewer:'بازبین'};
@@ -127,6 +128,8 @@ function SelfHome({db,person,period}:{db:DB;person:DB['people'][number];period:s
 function ExpectationsPage({db,person,period}:{db:DB;person:DB['people'][number];period:string}){
  const [roleFilter,setRoleFilter]=useState<'all'|WorkRole>('all');
  const [teamFilter,setTeamFilter]=useState('all');
+ const [openTaskId,setOpenTaskId]=useState<string|null>(null);
+ const [openEvidenceId,setOpenEvidenceId]=useState<string|null>(null);
  const mine=db.workItems.filter(w=>Object.values(w.roles).includes(person.id));
  const teamOptions=[...new Set(mine.map(w=>w.team))];
  const filtered=mine.filter(w=>(roleFilter==='all'||w.roles[roleFilter]===person.id)&&(teamFilter==='all'||w.team===teamFilter));
@@ -134,11 +137,62 @@ function ExpectationsPage({db,person,period}:{db:DB;person:DB['people'][number];
  const filteredEvidence=db.evidence.filter(e=>e.personId===person.id&&filteredIds.has(e.workItemId));
  const orphanEvidence=db.evidence.filter(e=>e.personId===person.id&&!db.workItems.some(w=>w.id===e.workItemId));
  const result=calculate(db,person,period);
+ const openTask=openTaskId?db.workItems.find(w=>w.id===openTaskId):undefined;
+ const openEvidence=openEvidenceId?db.evidence.find(e=>e.id===openEvidenceId):undefined;
+ const openFromEvidence=(e:Evidence)=>db.workItems.some(w=>w.id===e.workItemId)?setOpenTaskId(e.workItemId):setOpenEvidenceId(e.id);
  return <>
-  <p className="page-note">شواهد شما به تفکیک نقش و پروژه، منشأ هر تسک، و شواهد پشتیبان همراه با مسیر کامل تأیید نتیجه.</p>
+  <p className="page-note">شواهد شما به تفکیک نقش و پروژه، منشأ هر تسک، و شواهد پشتیبان همراه با مسیر کامل تأیید نتیجه. روی هر کار کلیک کنید تا نحوهٔ محاسبهٔ امتیاز آن را ببینید.</p>
 
-  <section className="panel"><div className="panel-title"><h2>شواهد به تفکیک نقش و پروژه</h2></div><div className="filters"><select aria-label="فیلتر نقش" value={roleFilter} onChange={e=>setRoleFilter(e.target.value as 'all'|WorkRole)}><option value="all">نقش: همه</option>{Object.entries(roles).map(([k,label])=><option value={k} key={k}>نقش: {label}</option>)}</select><select aria-label="فیلتر تیم یا پروژه" value={teamFilter} onChange={e=>setTeamFilter(e.target.value)}><option value="all">تیم/پروژه: همه</option>{teamOptions.map(t=><option value={t} key={t}>تیم/پروژه: {tr(t)}</option>)}</select></div><div className="inline-metrics"><span><strong>{faNum(filtered.length)}</strong> کار</span><span><strong>{faNum(filtered.reduce((s,w)=>s+w.complexity.workUnits,0))}</strong> واحد پیچیدگی</span><span><strong>{filteredEvidence.length?faNum(avg(filteredEvidence.map(e=>e.quality))):'—'}</strong> میانگین کیفیت</span></div><div className="table-wrap"><table><thead><tr><th>کار</th><th>نقش من</th><th>تیم/پروژه</th><th>مسیر تسک</th><th>واحد</th><th>وضعیت</th></tr></thead><tbody>{filtered.map(w=><tr key={w.id}><td><strong>{tr(w.workType)}</strong><small>{w.id}</small></td><td>{Object.entries(w.roles).filter(([,id])=>id===person.id).map(([r])=>roles[r as WorkRole]).join('، ')}</td><td>{tr(w.team)}</td><td>{tr(w.origin)}</td><td>{faNum(w.complexity.workUnits)}</td><td>{w.events.some(e=>e.eventType==='Accepted')?'پذیرفته‌شده':'در جریان'}</td></tr>)}{roleFilter==='all'&&teamFilter==='all'&&orphanEvidence.map(e=><tr key={e.id}><td><strong>{tr(e.title)}</strong><small>{e.id}</small></td><td>—</td><td>{tr(e.project)}</td><td>مستقیم از شواهد</td><td>—</td><td>{tr(e.status)}</td></tr>)}</tbody></table>{!filtered.length&&!orphanEvidence.length&&<div className="empty">با این فیلتر کاری یافت نشد.</div>}</div></section>
+  <section className="panel"><div className="panel-title"><h2>شواهد به تفکیک نقش و پروژه</h2></div><div className="filters"><select aria-label="فیلتر نقش" value={roleFilter} onChange={e=>setRoleFilter(e.target.value as 'all'|WorkRole)}><option value="all">نقش: همه</option>{Object.entries(roles).map(([k,label])=><option value={k} key={k}>نقش: {label}</option>)}</select><select aria-label="فیلتر تیم یا پروژه" value={teamFilter} onChange={e=>setTeamFilter(e.target.value)}><option value="all">تیم/پروژه: همه</option>{teamOptions.map(t=><option value={t} key={t}>تیم/پروژه: {tr(t)}</option>)}</select></div><div className="inline-metrics"><span><strong>{faNum(filtered.length)}</strong> کار</span><span><strong>{faNum(filtered.reduce((s,w)=>s+w.complexity.workUnits,0))}</strong> واحد پیچیدگی</span><span><strong>{filteredEvidence.length?faNum(avg(filteredEvidence.map(e=>e.quality))):'—'}</strong> میانگین کیفیت</span></div><div className="table-wrap"><table><thead><tr><th>کار</th><th>نقش من</th><th>تیم/پروژه</th><th>مسیر تسک</th><th>واحد</th><th>وضعیت</th></tr></thead><tbody>{filtered.map(w=><tr key={w.id} className="row-clickable" onClick={()=>setOpenTaskId(w.id)}><td><strong>{tr(w.workType)}</strong><small>{w.id}</small></td><td>{Object.entries(w.roles).filter(([,id])=>id===person.id).map(([r])=>roles[r as WorkRole]).join('، ')}</td><td>{tr(w.team)}</td><td>{tr(w.origin)}</td><td>{faNum(w.complexity.workUnits)}</td><td>{w.events.some(e=>e.eventType==='Accepted')?'پذیرفته‌شده':'در جریان'}</td></tr>)}{roleFilter==='all'&&teamFilter==='all'&&orphanEvidence.map(e=><tr key={e.id} className="row-clickable" onClick={()=>setOpenEvidenceId(e.id)}><td><strong>{tr(e.title)}</strong><small>{e.id}</small></td><td>—</td><td>{tr(e.project)}</td><td>مستقیم از شواهد</td><td>—</td><td>{tr(e.status)}</td></tr>)}</tbody></table>{!filtered.length&&!orphanEvidence.length&&<div className="empty">با این فیلتر کاری یافت نشد.</div>}</div></section>
 
-  <section className="panel"><div className="panel-title"><h2>شواهد پشتیبان و مسیر تأیید</h2></div>{result.all.map(e=><div className="project-item" key={e.id}><span>{tr(e.title)}<small>{e.reference} · {tr(e.status)}{e.excluded?' · تأخیر بیرونی حذف شده':''}</small></span></div>)}{!result.all.length&&<div className="empty">برای این دوره شاهدی وجود ندارد.</div>}{result.decisions.map(d=><p key={d.stage} className="page-note"><strong>{tr(d.stage)}</strong> · {d.actor} · {d.reason}</p>)}</section>
+  <section className="panel"><div className="panel-title"><h2>شواهد پشتیبان و مسیر تأیید</h2></div>{result.all.map(e=><button className="project-item" key={e.id} onClick={()=>openFromEvidence(e)}><span>{tr(e.title)}<small>{e.reference} · {tr(e.status)}{e.excluded?' · تأخیر بیرونی حذف شده':''}</small></span><ArrowUpLeft size={16}/></button>)}{!result.all.length&&<div className="empty">برای این دوره شاهدی وجود ندارد.</div>}{result.decisions.map(d=><p key={d.stage} className="page-note"><strong>{tr(d.stage)}</strong> · {d.actor} · {d.reason}</p>)}</section>
+
+  {openTask&&<TaskDetail db={db} item={openTask} person={person} onClose={()=>setOpenTaskId(null)}/>}
+  {openEvidence&&<EvidenceDetail evidence={openEvidence} person={person} onClose={()=>setOpenEvidenceId(null)}/>}
  </>;
+}
+
+// The per-task detail card: exactly how this task's complexity turns into work units, who holds each
+// of the seven responsibility roles, its full canonical-event timeline, any exception/attribution, and
+// every evidence record it produced — i.e. everything that feeds the score calculation for this task.
+const factorLabels=['دامنه','عدم قطعیت','هماهنگی','ریسک'];
+function TaskDetail({db,item,person,onClose}:{db:DB;item:WorkItem;person:DB['people'][number];onClose:()=>void}){
+ const personName=(id:string|null)=>id?db.people.find(p=>p.id===id)?.name||id:'—';
+ const roleEntries=Object.entries(item.roles) as [WorkRole,string|null][];
+ const myRoles=roleEntries.filter(([,id])=>id===person.id).map(([r])=>roles[r]);
+ const taskEvidence=db.evidence.filter(e=>e.workItemId===item.id);
+ const accepted=item.events.some(e=>e.eventType==='Accepted');
+ return <Modal title={`${tr(item.workType)} · ${item.id}`} onClose={onClose}>
+  <div className="modal-body">
+   <p>{tr(item.team)} · مسیر تسک: {tr(item.origin)} · {myRoles.length?`نقش شما: ${myRoles.join('، ')}`:'شما در این کار نقشی ندارید'}</p>
+   <div className="detail-stats">
+    <div><strong>{faNum(item.complexity.workUnits)}</strong><small>واحد پیچیدگی · {tr(item.complexity.band)}</small></div>
+    <div><strong>{accepted?'پذیرفته‌شده':'در جریان'}</strong><small>وضعیت کار</small></div>
+    <div><strong>{faNum(taskEvidence.length)}</strong><small>رکورد شاهد</small></div>
+   </div>
+   <h3>محاسبه پیچیدگی</h3>
+   <p>{item.complexity.factors.map((v,i)=>`${factorLabels[i]} ${faNum(v)}`).join(' + ')} = {faNum(item.complexity.total)} ← {faNum(item.complexity.workUnits)} واحد کار ({tr(item.complexity.band)}).</p>
+   <h3>نقش‌های مسئولیت (هفت‌گانه)</h3>
+   <table><thead><tr><th>نقش</th><th>فرد</th></tr></thead><tbody>{roleEntries.map(([r,id])=><tr key={r}><td>{roles[r]}</td><td>{id===person.id?<strong>{personName(id)} (شما)</strong>:personName(id)}</td></tr>)}</tbody></table>
+   {item.exception&&<div className="notice"><p><strong>استثنا:</strong> {tr(item.exception.type)} · شدت {tr(item.exception.severity)}{item.attributionCause&&<> · <strong>انتساب علت:</strong> {tr(item.attributionCause)}</>}</p></div>}
+   <h3>مسیر رویدادها</h3>
+   {item.events.slice().sort((a,b)=>a.occurredAt.localeCompare(b.occurredAt)).map(e=><p key={e.id} className="page-note"><strong>{tr(e.eventType)}</strong> · {personName(e.actorId)} ({roles[e.responsibilityRole]}) · {faDate(e.occurredAt)}</p>)}
+   <h3>شواهد این کار</h3>
+   {taskEvidence.map(e=><div className="project-item" key={e.id}><span><strong>{personName(e.personId)}{e.personId===person.id?' (شما)':''}</strong><small>{faSource(e.source)} / {e.reference} · {faPeriod(e.period)} · {tr(e.status)}</small><small>کیفیت {faNum(e.quality)} / پاسداری {faNum(e.stewardship)} / مشارکت جمعی {faNum(e.collective)} · سهم {faNum(e.share)}٪{e.excluded?' · تأخیر بیرونی حذف شده از قابلیت اتکا':''}</small></span></div>)}
+   {!taskEvidence.length&&<div className="empty">هنوز شاهدی برای این کار ثبت نشده است.</div>}
+  </div>
+ </Modal>;
+}
+
+// A standalone evidence record with no matching formal task (evidence captured directly).
+function EvidenceDetail({evidence,person,onClose}:{evidence:Evidence;person:DB['people'][number];onClose:()=>void}){
+ return <Modal title={`${tr(evidence.title)} · ${evidence.id}`} onClose={onClose}>
+  <div className="modal-body">
+   <p>مستقیم از شواهد · {tr(evidence.project)} · {evidence.personId===person.id?'شاهد شخصی شما':'—'}</p>
+   <div className="lineage">{faSource(evidence.source)} / {evidence.reference} ← {evidence.id} ← ارزیابی {faPeriod(evidence.period)}</div>
+   <p>عوامل پیچیدگی: {evidence.factors.map(v=>faNum(v)).join(' + ')} = {faNum(evidence.factors.reduce((a,b)=>a+b,0))} ← {faNum(units(evidence.factors))} واحد. سهم مسئولیت: {faNum(evidence.share)}٪.</p>
+   <p>{evidence.excluded?'تأخیر بیرونی از قابلیت اتکای فرد حذف شده است.':evidence.onTime?'در زمان مجاز تکمیل شده است.':'مهلت مجاز از دست رفته است.'}</p>
+   <div className="formula">کیفیت {faNum(evidence.quality)} / پاسداری {faNum(evidence.stewardship)} / مشارکت جمعی {faNum(evidence.collective)}</div>
+  </div>
+ </Modal>;
 }
