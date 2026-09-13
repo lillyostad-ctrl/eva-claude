@@ -4,7 +4,7 @@ import {tr} from './fa';
 export type AppContext={id:string;label:string;roleTitle:string;scope:string;engineRole:Role;readOnly?:boolean;managerId?:string;recursive?:boolean;personId?:string;nav:{id:string;label:string}[]};
 const item=(id:string,label:string)=>({id,label});
 
-const teamNav=[item('Home','خانه تیم'),item('Team outcomes','پیامدها و اهداف تیم'),item('People','اعضای تیم'),item('Evidence gaps','پوشش و شکاف شواهد'),item('System quality','کیفیت سیستم کاری'),item('Calibration','مرور شاهد و منطق پیش‌نویس'),item('Work capture','ثبت رویداد کار')];
+const teamNav=[item('Home','خانه تیم'),item('Team outcomes','پیامدها و اهداف تیم'),item('People','اعضای تیم'),item('Project snapshot','صف نمای پروژه'),item('Attribution','تشخیص انتساب'),item('Evidence gaps','پوشش و شکاف شواهد'),item('System quality','کیفیت سیستم کاری'),item('Calibration','مرور شاهد و منطق پیش‌نویس'),item('Work capture','ثبت رویداد کار')];
 
 // Manager contexts are built from the seeded organization so every team manager and every
 // manager-of-managers (department head, executive) gets a scope of their own real reports.

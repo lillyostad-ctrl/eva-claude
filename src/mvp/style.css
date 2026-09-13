@@ -23,3 +23,24 @@ aside{direction:rtl;text-align:right;overflow-y:auto;overflow-x:hidden;overscrol
 aside::-webkit-scrollbar{width:7px}aside::-webkit-scrollbar-thumb{background:#b9c8bd;border-radius:8px}aside::-webkit-scrollbar-track{background:transparent}
 aside nav{direction:rtl;align-items:stretch;flex:none}aside nav button{direction:rtl;text-align:right;justify-content:flex-start;width:100%;flex-shrink:0}aside nav button span{flex:1;text-align:right}aside nav em{margin-right:auto;margin-left:0}
 .select-wrap select{appearance:none;-webkit-appearance:none;-moz-appearance:none;background-image:none}
+
+/* Real-data trend chart (Home) and responsibility split bars (Attribution) */
+.trend-chart{padding:8px 23px 20px}
+.trend-chart svg{width:100%;height:160px;overflow:visible}
+.trend-grid{stroke:#edf0e9;stroke-width:1}
+.trend-line{stroke:#2c624b;stroke-width:2}
+.trend-dot{fill:#2c624b}
+.trend-label{font-size:9px;fill:#8a9583}
+.trend-value{font-size:10px;font-weight:650;fill:#3e5342}
+.split-list{padding:6px 23px 20px;display:flex;flex-direction:column;gap:18px}
+.split-row{border-bottom:1px solid #edf0e9;padding-bottom:16px}
+.split-row:last-child{border-bottom:0;padding-bottom:0}
+.split-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font-size:12px}
+.split-note{display:flex;align-items:center;gap:5px;color:#477553;margin-top:6px}
+.split-bar-track{display:flex;height:10px;border-radius:6px;overflow:hidden;background:#f0f3ef}
+.split-bar-seg{height:100%}
+.split-bar-executor{background:#2c624b}
+.split-bar-contributor{background:#9fc2ac}
+.split-bar-legend{display:flex;gap:18px;margin-top:8px;font-size:10px;color:#6d7c6c}
+.split-bar-legend span{display:flex;align-items:center;gap:6px}
+.split-dot{display:inline-block;width:8px;height:8px;border-radius:2px}
