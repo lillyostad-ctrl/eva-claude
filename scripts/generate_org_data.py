@@ -331,6 +331,10 @@ for team in leaf_teams:
         wi_seq += 1
         wid = next_ids("wi", wi_seq)
         work_type = random.choice(team["work_types"])
+        origin = random.choices(
+            ["Task manager", "KPI", "OKR", "Resolution"],
+            weights=[0.55, 0.20, 0.15, 0.10],
+        )[0]
         factors = {k: random.randint(0, 3) for k in ["scope", "uncertainty", "coordination", "risk"]}
         total = sum(factors.values())
         band = "Routine" if total <= 2 else "Standard" if total <= 5 else "Complex" if total <= 8 else "Exceptional"
@@ -433,6 +437,7 @@ for team in leaf_teams:
             "teamId": team["id"],
             "archetype": team["archetype"],
             "workType": work_type,
+            "origin": origin,
             "complexity": {"factors": factors, "total": total, "band": band, "workUnits": work_units},
             "roleAssignments": role_assignments,
             "evidenceIds": evidence_ids,
