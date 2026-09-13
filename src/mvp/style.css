@@ -54,3 +54,15 @@ aside nav{direction:rtl;align-items:stretch;flex:none}aside nav button{direction
 .wbs-task.wbs-mine{background:#f6faf6}
 .form-inline{border-top:1px solid #edf0e9;margin-top:6px;padding-top:20px}
 .trend-line-org{stroke:#c8a55a;stroke-dasharray:5 4}
+
+/* Expectations & Evidence workspace: tabs and the merged evidence ledger */
+.tabs{display:flex;gap:6px;padding:0 23px;margin-bottom:16px;border-bottom:1px solid #e2e7de}
+.tab-btn{background:transparent;border:0;border-radius:0;padding:11px 14px;font-size:12px;font-weight:650;color:#8a9583;border-bottom:2px solid transparent;display:flex;align-items:center;gap:7px}
+.tab-btn.active{color:#2c624b;border-bottom-color:#2c624b}
+.tab-btn .badge{background:#eaf1e9;color:#2e6149}
+.evidence-list{display:flex;flex-direction:column}
+.evidence-row{border-top:1px solid #edf0e9;padding:14px 23px;cursor:pointer}
+.evidence-row summary{display:flex;align-items:center;gap:12px;list-style:none}
+.evidence-row summary::-webkit-details-marker{display:none}
+.evidence-row-title{flex:1;display:flex;flex-direction:column;gap:2px}
+.evidence-row-body{padding-top:14px;font-size:12px;color:#647063}
