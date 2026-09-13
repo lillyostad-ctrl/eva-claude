@@ -16,6 +16,12 @@ npm run lint     # type-check
 npm test         # domain engine tests
 ```
 
+## Deploy
+
+Pushing to `main` or any `claude/**` branch builds and deploys to Cloudflare
+Pages automatically via GitHub Actions. See [DEPLOY.md](DEPLOY.md) for the
+one-time Cloudflare API token setup required before the first push.
+
 ## Data
 
 The seeded organization (`src/mvp/mockData.json`) is fifty fictional people
