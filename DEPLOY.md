@@ -18,7 +18,9 @@ be run manually from the Actions tab (workflow_dispatch).
 2. **Get your Account ID**: shown on the right sidebar of any zone's
    Overview page in the Cloudflare dashboard, or via `wrangler whoami`.
 3. **Add two repository secrets** (GitHub repo → Settings → Secrets and
-   variables → Actions → New repository secret):
+   variables → Actions → New repository secret). See `.secrets.example` in
+   the repo root for the exact names — it's a checklist only, GitHub Actions
+   does not read it, and real values must never be committed:
    - `CLOUDFLARE_API_TOKEN`
    - `CLOUDFLARE_ACCOUNT_ID`
 4. (Optional) **Add a repository variable** `CLOUDFLARE_PAGES_PROJECT` if you
