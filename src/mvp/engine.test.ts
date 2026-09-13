@@ -63,7 +63,7 @@ test('band and complexity boundaries remain continuous',()=>{
 });
 
 test('every capability menu destination has a live page implementation',()=>{
- const implemented=new Set(['Home','Expectations','Work capture','Team outcomes','Evidence gaps','System quality','Project snapshot','Attribution','Job families','Performance profiles','Integrations','Engine ledger','Calibration facilitator','Quality samples','Governance cases','Payroll preview','Access management','People','Calibration','Performance pay','Quality review','Projects','Appeals','Model & policy','Data & controls','People analytics','Audit trail']);
+ const implemented=new Set(['Home','Expectations','Team outcomes','System quality','Project snapshot','Attribution','Job families','Performance profiles','Integrations','Engine ledger','Calibration facilitator','Quality samples','Governance cases','Payroll preview','Access management','People','Calibration','Performance pay','Quality review','Projects','Appeals','Model & policy','Data & controls','People analytics','Audit trail']);
  const contexts=buildContexts(seed());
  assert.ok(contexts.length>10,'every team manager and manager-of-managers gets a scoped context');
  for(const context of contexts)for(const entry of context.nav)assert.ok(implemented.has(entry.id),`${context.id}: ${entry.id}`);
