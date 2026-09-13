@@ -21,5 +21,5 @@ const fa: Record<string,string> = {
 export const tr=(value:string|undefined|null)=>value==null?'—':fa[value]||value;
 export const faNum=(value:number|string,maximumFractionDigits=1)=>Number(value).toLocaleString('fa-IR',{maximumFractionDigits});
 export const faDate=(value:string)=>new Date(value).toLocaleString('fa-IR',{dateStyle:'medium',timeStyle:'short'});
-export const faPeriod=(period:string)=>({"2026-06":'خرداد ۱۴۰۵',"2026-07":'تیر ۱۴۰۵',"2026-08":'مرداد ۱۴۰۵'}[period]||period);
+export const faPeriod=(period:string)=>({"2026-06":'فصل اول ۱۴۰۵',"2026-07":'فصل دوم ۱۴۰۵',"2026-08":'فصل سوم ۱۴۰۵'}[period]||period);
 export const faSource=(value:string)=>value==='Payroll'?tr('PayrollSource'):tr(value);

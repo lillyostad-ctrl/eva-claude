@@ -305,9 +305,13 @@ teams.append({
 
 assert len(people) == 50, f"expected 50 people, got {len(people)}"
 
+manager_ids = {p["managerId"] for p in people if p["managerId"]}
+demo_employee_id = next(p["id"] for p in people if p["id"] not in manager_ids)
+
 # --- Work items, events, exceptions, evidence ledger ---
 work_items = []
 evidence_ledger = []
+appeals = []
 wi_seq = 0
 ev_seq = 0
 evt_seq = 0
@@ -324,7 +328,7 @@ def next_ids(prefix, seq):
 
 
 for team in leaf_teams:
-    members = team["memberIds"]
+    members = [m for m in team["memberIds"] if m != demo_employee_id]
     ic_members = [m for m in members if m != team["managerId"]]
     reviewer_pool = [m for m in members if m != team["managerId"]] or members
     for i in range(team["item_count"]):
@@ -446,6 +450,212 @@ for team in leaf_teams:
             "events": events,
         })
 
+# --- Demo employee enrichment: 7 projects, 58 tasks (every table column populated),
+# spread across the 3 quarterly periods, plus 5 appeal/follow-up cases. ---
+def build_events(wid, manager_id, executor, reviewer, decision_owner, assigned_at, exception):
+    events = []
+
+    def add_event(event_type, category, actor, role, at):
+        global evt_seq
+        evt_seq += 1
+        events.append({
+            "id": next_ids("evt", evt_seq),
+            "eventType": event_type,
+            "category": category,
+            "occurredAt": at,
+            "actorId": actor,
+            "responsibilityRole": role,
+            "workItemId": wid,
+        })
+
+    t0 = datetime.strptime(assigned_at, "%Y-%m-%dT%H:%M:%S.000Z")
+    add_event("Assigned", "work", manager_id, "assigner", assigned_at)
+    add_event("Started", "work", executor, "executor", (t0 + timedelta(days=1)).strftime("%Y-%m-%dT%H:00:00.000Z"))
+    if exception and exception["type"] == "Missed deadline":
+        add_event("Blocked", "work", executor, "executor", (t0 + timedelta(days=2)).strftime("%Y-%m-%dT%H:00:00.000Z"))
+        add_event("Unblocked", "work", manager_id, "assigner", (t0 + timedelta(days=4)).strftime("%Y-%m-%dT%H:00:00.000Z"))
+    submit_day = t0 + timedelta(days=random.randint(3, 8))
+    add_event("Submitted", "work", executor, "executor", submit_day.strftime("%Y-%m-%dT%H:00:00.000Z"))
+    add_event("Artifact linked", "control", executor, "executor", (submit_day + timedelta(hours=6)).strftime("%Y-%m-%dT%H:00:00.000Z"))
+    if random.random() < 0.4:
+        add_event("Sample selected", "control", reviewer, "reviewer", (submit_day + timedelta(days=1)).strftime("%Y-%m-%dT%H:00:00.000Z"))
+        add_event("Sample reviewed", "control", reviewer, "reviewer", (submit_day + timedelta(days=3)).strftime("%Y-%m-%dT%H:00:00.000Z"))
+    if exception and exception["resolutionState"] == "Open" and random.random() < 0.5:
+        add_event("Returned", "work", reviewer, "reviewer", (submit_day + timedelta(days=2)).strftime("%Y-%m-%dT%H:00:00.000Z"))
+        add_event("Reopened", "work", executor, "executor", (submit_day + timedelta(days=3)).strftime("%Y-%m-%dT%H:00:00.000Z"))
+    else:
+        add_event("Accepted", "work", reviewer, "reviewer", (submit_day + timedelta(days=2)).strftime("%Y-%m-%dT%H:00:00.000Z"))
+        add_event("Result approved", "governance", decision_owner, "decision_owner", (submit_day + timedelta(days=4)).strftime("%Y-%m-%dT%H:00:00.000Z"))
+    if exception and exception["severity"] == "Critical":
+        add_event("Score disputed", "governance", executor, "executor", (submit_day + timedelta(days=5)).strftime("%Y-%m-%dT%H:00:00.000Z"))
+        if exception["resolutionState"] != "Open":
+            add_event("Score adjudicated", "governance", manager_id, "assigner", (submit_day + timedelta(days=7)).strftime("%Y-%m-%dT%H:00:00.000Z"))
+    return events
+
+
+DEMO_PROJECT_TEAMS = random.sample(leaf_teams, 7)
+DEMO_TASK_COUNTS = [9, 9, 8, 8, 8, 8, 8]
+DEMO_ROLE_CYCLE = ["executor", "contributor", "reviewer", "requester", "decision_owner"]
+demo_task_index = 0
+demo_evidence_by_period = {p: [] for p in PERIODS}
+
+for team, count in zip(DEMO_PROJECT_TEAMS, DEMO_TASK_COUNTS):
+    others = [m for m in team["memberIds"] if m != demo_employee_id] or [team["managerId"]]
+    for _ in range(count):
+        wi_seq += 1
+        wid = next_ids("wi", wi_seq)
+        work_type = random.choice(team["work_types"])
+        origin = random.choices(
+            ["Task manager", "KPI", "OKR", "Resolution"],
+            weights=[0.55, 0.20, 0.15, 0.10],
+        )[0]
+        factors = {k: random.randint(0, 3) for k in ["scope", "uncertainty", "coordination", "risk"]}
+        total = sum(factors.values())
+        band = "Routine" if total <= 2 else "Standard" if total <= 5 else "Complex" if total <= 8 else "Exceptional"
+        work_units = {"Routine": 1, "Standard": 2, "Complex": 4, "Exceptional": 8}[band]
+        period = PERIODS[demo_task_index % 3]
+        my_role = DEMO_ROLE_CYCLE[demo_task_index % len(DEMO_ROLE_CYCLE)]
+        other_pick = random.choice(others)
+        executor = demo_employee_id if my_role == "executor" else other_pick
+        contributor = demo_employee_id if my_role == "contributor" else (executor if random.random() < 0.6 else random.choice(others))
+        reviewer = demo_employee_id if my_role == "reviewer" else random.choice([m for m in others if m != executor] or [team["managerId"]])
+        requester = demo_employee_id if my_role == "requester" else random.choice(others)
+        decision_owner = demo_employee_id if my_role == "decision_owner" else random.choice([team["managerId"], executor])
+        role_assignments = {
+            "requester": requester,
+            "planner": team["managerId"],
+            "assigner": team["managerId"],
+            "decision_owner": decision_owner,
+            "executor": executor,
+            "contributor": contributor,
+            "reviewer": reviewer,
+        }
+        has_exception = random.random() < 0.12
+        exception = None
+        attribution_cause = None
+        if has_exception:
+            etype, severity, cause = random.choice(EXCEPTION_TYPES)
+            exception = {
+                "type": etype,
+                "severity": severity,
+                "raisedBy": reviewer,
+                "raisedAgainst": executor,
+                "raisedAt": rand_day(),
+                "resolutionState": random.choice(RESOLUTION_STATES),
+            }
+            attribution_cause = cause
+        elif random.random() < 0.08:
+            attribution_cause = random.choice([
+                "External outage or unavailable dependency",
+                "Unrealistic deadline at assignment",
+                "Management-created overload",
+            ])
+
+        assigned_at = rand_day(20)
+        events = build_events(wid, team["managerId"], executor, reviewer, decision_owner, assigned_at, exception)
+
+        evidence_ids = []
+        for _ in range(random.randint(1, 3)):
+            ev_seq += 1
+            eid = next_ids("ev", ev_seq)
+            source = random.choice(SOURCE_SYSTEMS)
+            state = "Rejected" if (exception and exception["severity"] == "Critical" and random.random() < 0.4) \
+                else "Pending" if random.random() < 0.15 else "Verified"
+            evidence_ledger.append({
+                "id": eid,
+                "workItemId": wid,
+                "type": random.choice(["accepted_work", "control_result", "artifact", "decision_record"]),
+                "sourceSystem": source,
+                "artifactReference": f"doc://{team['id']}/{wid}/{eid}.pdf",
+                "verificationState": state,
+                "metadataHash": hashlib.md5(f"{wid}{eid}".encode()).hexdigest(),
+                "capturedAt": rand_day(30),
+                "period": period,
+            })
+            evidence_ids.append(eid)
+            demo_evidence_by_period[period].append(eid)
+
+        work_items.append({
+            "id": wid,
+            "teamId": team["id"],
+            "archetype": team["archetype"],
+            "workType": work_type,
+            "origin": origin,
+            "complexity": {"factors": factors, "total": total, "band": band, "workUnits": work_units},
+            "roleAssignments": role_assignments,
+            "evidenceIds": evidence_ids,
+            "exception": exception,
+            "attributionCause": attribution_cause,
+            "events": events,
+        })
+        demo_task_index += 1
+
+assert demo_task_index == 58, f"expected 58 demo tasks, got {demo_task_index}"
+assert len({t['id'] for t in DEMO_PROJECT_TEAMS}) == 7
+
+APPEAL_CASES = [
+    {
+        "period": "2026-06",
+        "reason": "درخواست بازبینی امتیاز کیفیت به دلیل تغییر نیازمندی پس از ارسال کار.",
+        "grounds": "تغییر نیازمندی پس از ارسال",
+        "remedy": "اصلاح امتیاز کیفیت دوره فصل اول",
+        "status": "Resolved",
+        "outcome": "Partially upheld",
+        "resolution": "بخشی از افت کیفیت ناشی از تغییر دیرهنگام نیازمندی تأیید و در امتیاز فصل اول لحاظ شد.",
+    },
+    {
+        "period": "2026-06",
+        "reason": "اعتراض به احتساب تأخیر ناشی از اختلال بیرونی در شاخص قابلیت اتکا.",
+        "grounds": "انتساب اشتباه علت",
+        "remedy": "حذف بازه اختلال از محاسبه به‌موقع بودن",
+        "status": "Resolved",
+        "outcome": "Upheld",
+        "resolution": "اختلال سامانه بیرونی تأیید و از شاخص قابلیت اتکا حذف شد.",
+    },
+    {
+        "period": "2026-07",
+        "reason": "درخواست بازبینی سهم مشارکت در کاری که با همکار دیگر مشترک انجام شده است.",
+        "grounds": "سهم مسئولیت مشترک نادرست",
+        "remedy": "بازتوزیع سهم مجری و مشارکت‌کننده",
+        "status": "Resolved",
+        "outcome": "Overturned",
+        "resolution": "پس از بررسی رویدادها، سهم ثبت‌شده منطبق با شواهد تشخیص داده شد و اعتراض رد شد.",
+    },
+    {
+        "period": "2026-07",
+        "reason": "اعتراض به رد شاهد ارسالی به دلیل مستندسازی ناقص با وجود تأیید مدیر مستقیم.",
+        "grounds": "مدارک ناقص با تأیید مسبوق",
+        "remedy": "بازبینی مجدد شاهد رد‌شده",
+        "status": "Open",
+    },
+    {
+        "period": "2026-08",
+        "reason": "درخواست بررسی بار کاری ایجادشده توسط مدیریت که بر مهلت تحویل اثر گذاشته است.",
+        "grounds": "بارکاری ایجادشده توسط مدیریت",
+        "remedy": "خارج‌کردن کار از محاسبه مهلت ازدست‌رفته",
+        "status": "Open",
+    },
+]
+for i, case in enumerate(APPEAL_CASES):
+    evidence_ref = random.choice(demo_evidence_by_period[case["period"]]) if demo_evidence_by_period[case["period"]] else None
+    appeal = {
+        "id": f"AP-{201 + i}",
+        "personId": demo_employee_id,
+        "period": case["period"],
+        "reason": case["reason"],
+        "grounds": case["grounds"],
+        "evidenceRef": evidence_ref,
+        "remedy": case["remedy"],
+        "openedAt": rand_day(40),
+        "status": case["status"],
+        "actor": "بازبین اعتراض",
+    }
+    if case["status"] == "Resolved":
+        appeal["outcome"] = case["outcome"]
+        appeal["resolution"] = case["resolution"]
+        appeal["resolvedAt"] = rand_day(45)
+    appeals.append(appeal)
+
 data = {
     "meta": {
         "generatedFor": "EvalCore mock data set",
@@ -463,9 +673,10 @@ data = {
     "people": people,
     "workItems": work_items,
     "evidenceLedger": evidence_ledger,
+    "appeals": appeals,
 }
 
 with open("src/mvp/mockData.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=1)
 
-print(f"people={len(people)} teams={len(teams)} workItems={len(work_items)} evidence={len(evidence_ledger)} events={sum(len(w['events']) for w in work_items)}")
+print(f"people={len(people)} teams={len(teams)} workItems={len(work_items)} evidence={len(evidence_ledger)} events={sum(len(w['events']) for w in work_items)} appeals={len(appeals)} demo_employee={demo_employee_id}")
