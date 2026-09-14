@@ -3,7 +3,7 @@ import {mockConnectorRegistry,normalizeEvents,type ConnectorState} from './conne
 export const dimensions = ['Contribution','Quality','Reliability','Stewardship','Collective'];
 export const weights = {Transactional:[25,35,25,10,5],Project:[35,25,20,5,15],Knowledge:[15,40,15,10,20],Coordination:[20,25,30,10,15],Control:[15,30,20,30,5],Management:[25,20,15,15,25]};
 export type Archetype = keyof typeof weights;
-export type Role = 'Employee'|'Manager'|'Reviewer'|'Calibrator'|'Governance'|'Payroll'|'Model admin';
+export type Role = 'Employee'|'Manager'|'Reviewer'|'Calibrator'|'Governance'|'Payroll'|'Model admin'|'HRIS';
 export type WorkRole='requester'|'planner'|'assigner'|'decision_owner'|'executor'|'contributor'|'reviewer';
 export type EventCategory='work'|'control'|'governance';
 export type PeriodState='Open'|'Calculating'|'Locked'|'Published';
@@ -60,7 +60,7 @@ export function seed():DB{
  const appeals:Appeal[]=[...(mock.appeals as Appeal[]||[]),...mock.workItems.filter(w=>w.attributionCause==='External outage or unavailable dependency').slice(0,2).map((w,i)=>({id:`AP-${101+i}`,personId:w.roleAssignments.executor,period:'2026-08',reason:'درخواست بررسی اثر اختلال بیرونی و حذف زمان خارج از کنترل از شاخص قابلیت اتکا.',grounds:'انتساب اشتباه علت',evidenceRef:w.evidenceIds?.[0],openedAt:mock.meta.generatedAt,status:'Open' as const}))];
  return {version:2,revision:1,connectors:mockConnectorRegistry(mock.evidenceLedger,mock.meta.generatedAt),people,teams,workItems,sampling,periods:[{id:'2026-06',cadence:'Quarterly',state:'Published',publishedAt:'2026-07-05T00:00:00Z'},{id:'2026-07',cadence:'Quarterly',state:'Published',publishedAt:'2026-08-05T00:00:00Z'},{id:'2026-08',cadence:'Quarterly',state:'Open'}],evidence,decisions:[],appeals,ledger:[{id:'AU-100',at:mock.meta.generatedAt,actor:'سامانه',action:'پایگاه داده نمایشی بارگذاری شد',target:'دوره ۲۰۲۶-۰۸',detail:`${people.length} نفر، ${mock.teams.length} واحد سازمانی، ${mock.workItems.length} کار، ${workItems.flatMap(w=>w.events).length} رویداد و ${evidence.length} رکورد شواهد از فایل ارائه‌شده بارگذاری شد.`}],standard:'1.0'};
 }
-export const actors:Record<Role,string>={Employee:findEmployeeDemoId(),Manager:'manager-1',Reviewer:'reviewer-1',Calibrator:'calibrator-1',Governance:'governance-1',Payroll:'payroll-1','Model admin':'model-admin-1'};
+export const actors:Record<Role,string>={Employee:findEmployeeDemoId(),Manager:'manager-1',Reviewer:'reviewer-1',Calibrator:'calibrator-1',Governance:'governance-1',Payroll:'payroll-1','Model admin':'model-admin-1',HRIS:'hris-1'};
 function findEmployeeDemoId():string{const ic=mock.people.find(p=>!mock.people.some(other=>other.managerId===p.id));return ic?.id||mock.people[0].id;}
 export const directReports=(db:DB,managerId:string):Person[]=>db.people.filter(p=>p.managerId===managerId);
 export const allReports=(db:DB,managerId:string):Person[]=>directReports(db,managerId).flatMap(p=>[p,...allReports(db,p.id)]);

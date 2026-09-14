@@ -12,3 +12,13 @@ dialog{direction:rtl;font-family:"Estedad",Tahoma,sans-serif}
 .appeal-step-pending{background:#faf1df;color:#9c7c37}
 .appeal-arrow{color:#b7c0b3;font-size:11px}
 .appeal-meta{font-size:11px;color:#647063;margin:6px 0}
+
+/* HRIS team and project queue */
+.team-queue-card{min-width:0}
+.queue-subtitle{font-size:11px;font-weight:650;color:#78917c;margin:12px 0 8px}
+.queue-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.queue-chips span{font-size:11px;background:#eef5ec;color:#426f55;border-radius:5px;padding:5px 8px}
+.queue-member{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid #edf0e9}
+.queue-member button{font-size:11px;padding:6px 9px}
+.queue-add{margin-top:12px;border-top:1px solid #edf0e9;padding-top:10px}
+.queue-add summary{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;font-weight:650;color:#2c624b}
